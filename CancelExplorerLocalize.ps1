@@ -97,7 +97,7 @@ foreach ($str_path in $strarr_paths) {
             try {
                 $str_tempPath = "$str_path.tmp"
                 [System.IO.File]::WriteAllLines($str_tempPath, $strarr_lines, $encoding_current)
-                Move-Item -Path $str_tempPath -Destination $str_path -Force
+                [System.IO.File]::Replace($str_tempPath, $str_path, $null) # 属性を維持して入れ替え
             }
             catch {
                 throw "Write failed: $($_.Exception.Message)"
