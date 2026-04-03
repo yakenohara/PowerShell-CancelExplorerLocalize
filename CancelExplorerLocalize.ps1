@@ -48,7 +48,7 @@ foreach ($str_path in $strarr_paths) {
     $int_total++
 
     try {
-        if (-not (Test-Path $str_path)) {
+        if (-not (Test-Path $str_path -PathType Leaf)) {
             Write-Warning "File not found: $str_path"
             $int_skipped++
             continue
@@ -58,6 +58,11 @@ foreach ($str_path in $strarr_paths) {
         # 読み込み
         # =========================
         try {
+
+            # 属性バックアップ
+            $file_item = Get-Item $str_path -Force -ErrorAction Stop
+            $attr_original = $file_item.Attributes
+
             [byte[]]$bytes = [System.IO.File]::ReadAllBytes($str_path)
 
             if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
@@ -92,12 +97,13 @@ foreach ($str_path in $strarr_paths) {
         if ($bl_modified) {
 
             # =========================
-            # 書き込み（安全版）
+            # 書き込み
             # =========================
             try {
                 $str_tempPath = "$str_path.tmp"
                 [System.IO.File]::WriteAllLines($str_tempPath, $strarr_lines, $encoding_current)
-                [System.IO.File]::Replace($str_tempPath, $str_path, $null) # 属性を維持して入れ替え
+                Move-Item -Path $str_tempPath -Destination $str_path -Force
+                [System.IO.File]::SetAttributes($str_path, $attr_original) # 属性復元
             }
             catch {
                 throw "Write failed: $($_.Exception.Message)"
